@@ -5,10 +5,12 @@ import './App.css'
 
 import Counter from './components/Counter';
 import Photo from './components/Photo';
+import Album from './components/Album';
 
 function App() {
   const [count, setCount] = useState(0);
   const [photos, setPhotos] = useState([]);
+  const [albumId, setAlbumId] = useState(1);
 
   const fetchPhotos = async () => {
     try {
@@ -17,23 +19,22 @@ function App() {
       // console.log(response);
       if (response.status === 200) {
         const data = await response.json();
-      console.log(data);
-      // correção da imagem thumb
-      const updatePhotos = data.map( (photo) => ({
-        ...photo,
-        thumbnailUrl: `https://picsum.photos/150?random=${photo.id}`
-      }));
-      // ...photo { id: 1, title: "rótulo", thumbnailUrl: "http:///",...}
-      // { photo: { id: 1, title: "rotulo",... }}
-        setPhotos(updatePhotos);
+        // console.log(data);
+        // correção da imagem thumb
+        const updatedPhotos = data.map( (photo) => ({
+          ...photo,
+          thumbnailUrl: `https://picsum.photos/150?random=${photo.id}`
+        }));
+        // ...photo { id: 1, title: "rótulo", thumbnailUrl: "http:///",...}
+        // { photo: { id: 1, title: "rotulo",... }}
+        setPhotos(updatedPhotos);
       }
 
-
     } catch (error) {
-      consoloe.error('Erro ao buscar fotos', error);
+      console.error('Erro ao buscar fotos', error);
     }
-
   }
+  // console.log(photos);
 
   useEffect(() => {
     fetchPhotos();
@@ -43,9 +44,9 @@ function App() {
   //   setCount(count+1);
   // }
 
-  // arraw function 
+  // arrow function 
   // () => () // return implícito
-  // () => {} // é necessário colocar o return 
+  // () => {} // é necessário colocar o return (caso precise)
 
   const updateCount = () => {
     // outros comandos
@@ -70,21 +71,29 @@ function App() {
 
   return (
     <>
-      <Counter title="Contador" />
-      <Counter initial="8000" />
-      <article>
+      <Counter title="Contando..." />
+      <Counter initial="100" />
+      {/* <article>
         <h1>Album da API</h1>
         {photos.map( (photo) => (
-        //  <article key={photo.id}>
-        //     <h2>ID #{photo.id} {photo.title}</h2>
-        //     <img src={photo.thumbnailUrl} alt={photo.title} />
-        //  </article>
-        <Photo photo={photo} />
+          // <article key={photo.id}>
+          //   <h2>ID #{photo.id} {photo.title}</h2>
+          //   <img src={photo.thumbnailUrl} alt={photo.title} />
+          // </article>
+          <Photo photo={photo} />
         ))}
-      </article>
-      
+      </article> */}
+      <div>
+        <button onClick={() => setAlbumId(1)}>Album #1</button>
+        <button onClick={() => setAlbumId(2)}>Album #2</button>
+        <button onClick={() => setAlbumId(3)}>Album #3</button>
+        <button onClick={() => setAlbumId(4)}>Album #4</button>
+      </div>
+
+      <Album albumId={albumId} />
+
     </>
   )
 }
 
-export default App
+export default App;
