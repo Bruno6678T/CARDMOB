@@ -1,10 +1,6 @@
 {
   "items": [
     {
-      "id": "debd",
-      "text": "FDS"
-    },
-    {
       "id": "358f",
       "text": "HAHAHAHAHHAHAHAHHAHAH"
     },
@@ -27,6 +23,28 @@
     {
       "id": "bd6f",
       "text": "asasas"
+    }
+  ],
+  "compras": [
+    {
+      "item": "Panquecas",
+      "quantidade": 77777,
+      "id": "f499"
+    },
+    {
+      "id": "a7b5",
+      "item": "Ovos",
+      "Quantidade": 999999999
+    },
+    {
+      "id": "5957",
+      "item": "Frango Frito",
+      "quantidade": 62255353
+    },
+    {
+      "id": "fe21",
+      "item": "Cheetos",
+      "quantidade": 6363636363
     }
   ]
 }
