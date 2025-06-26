@@ -1,151 +1,179 @@
 import React, { useState, useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, Image, TextInput, FlatList, Alert, ActivityIndicator } from 'react-native';
+import { 
+  StyleSheet, 
+  Text, 
+  View,
+  Image,
+  Button, 
+  TextInput, 
+  FlatList, 
+  Alert, 
+  ActivityIndicator, 
+  TouchableOpacity,
+  StatusBar
+} from 'react-native';
 
 // Indicar o endereço do backend. SUBSTITUA 'SEU_IP_AQUI' PELO IP DA SUA MÁQUINA.
-const BASE_URL = 'http://10.81.205.35:3000'; // Mantenha a porta 3000 se for a padrão do json-server
+// Exemplo no emulador Android: 'http://10.0.2.2:3000'
+// Exemplo no dispositivo físico: 'http://192.168.1.10:3000'
+const BASE_URL = 'http://10.81.205.35:5000';
 
 export default function App() {
-  const [comprasList, setComprasList] = useState([]);
-  const [itemName, setItemName] = useState('');
-  const [itemQuantity, setItemQuantity] = useState(''); // Quantidade como string para o TextInput
+  // --- Estados para a lista e formulários ---
+  const [productsList, setProductsList] = useState([]);
+  const [productName, setProductName] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  const [productPrice, setProductPrice] = useState('');
 
-  const [editItemId, setEditItemId] = useState(null);
-  const [editItemName, setEditItemName] = useState('');
-  const [editItemQuantity, setEditItemQuantity] = useState('');
+  const [editProductId, setEditProductId] = useState(null);
+  const [editProductName, setEditProductName] = useState('');
+  const [editProductDescription, setEditProductDescription] = useState('');
+  const [editProductPrice, setEditProductPrice] = useState('');
 
   const [loading, setLoading] = useState(false);
 
-  // Buscar todos os itens da lista de compras.
-  const fetchItems = async () => {
+  // --- (v1) READ: Buscar todos os produtos do backend ---
+  const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/compras`);
+      const response = await fetch(`${BASE_URL}/api/catalog?page=1`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      // console.log('Dados recebidos do backend:', JSON.stringify(data)); // debug
-      setComprasList(data);
+      console.log(data.catalog)
+      setProductsList(data.catalog);
     } catch (error) {
-      console.error('Erro ao buscar itens:', error);
-      Alert.alert("Erro", "Não foi possível buscar os itens da lista de compras. Verifique o console para mais detalhes e se o backend está rodando no IP/porta corretos.");
+      console.error('Erro ao buscar produtos:', error);
+      Alert.alert("Erro", "Não foi possível carregar os produtos. Verifique o console e se o backend está rodando no IP/porta corretos.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Carrega os produtos ao iniciar o app
   useEffect(() => {
-    fetchItems();
+    fetchProducts();
   }, []);
 
-  // CREATE - Adicionar um novo item à lista de compras
-  const addItem = async () => {
-    if (itemName.trim() === '' || itemQuantity.trim() === '') {
-      Alert.alert("Atenção", "Nome do item e quantidade são obrigatórios.");
+  // --- (v1) CREATE: Adicionar um novo produto ---
+  const addProduct = async () => {
+    if (productName.trim() === '' || productPrice.trim() === '') {
+      Alert.alert("Atenção", "Nome do produto e Preço são obrigatórios.");
       return;
     }
-    // Validação simples para garantir que a quantidade é um número
-    const quantity = parseInt(itemQuantity.trim(), 10);
-    if (isNaN(quantity) || quantity <= 0) {
-        Alert.alert("Atenção", "A quantidade deve ser um número maior que zero.");
-        return;
+    const price = parseFloat(productPrice.trim().replace(',', '.'));
+    if (isNaN(price) || price < 0) {
+      Alert.alert("Atenção", "O preço deve ser um número válido.");
+      return;
     }
 
     setLoading(true);
+    const newProduct = {
+      name: productName.trim(),
+      description: productDescription.trim(),
+      price: price,
+    };
+
     try {
-      const response = await fetch(`${BASE_URL}/compras`, {
+      const response = await fetch(`${BASE_URL}/api/catalog`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ item: itemName.trim(), quantidade: quantity }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct),
       });
-      if (response.ok) {
-        await fetchItems(); // Rebusca os itens para atualizar a lista
-        setItemName('');
-        setItemQuantity('');
+      if (response.status === 201) {
+        await fetchProducts(); // Rebusca os produtos para atualizar a lista
+        setProductName('');
+        setProductDescription('');
+        setProductPrice('');
       } else {
-        console.error('Falha ao adicionar item:', response.status);
-        Alert.alert("Erro", `Falha ao adicionar item. Status: ${response.status}`);
+        throw new Error(`Falha ao adicionar produto. Status: ${response.status}`);
       }
     } catch (error) {
-      console.error('Erro ao adicionar item:', error);
-      Alert.alert("Erro", "Ocorreu um erro ao adicionar o item.");
+      console.error('Erro ao adicionar produto:', error);
+      Alert.alert("Erro", `Ocorreu um erro ao adicionar o produto: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Prepara para edição
-  const startEditItem = (item) => {
-    setEditItemId(item.id);
-    setEditItemName(item.item);
-    setEditItemQuantity(String(item.quantidade)); // Converte para string para o TextInput
+  // --- Funções de Edição ---
+  // Prepara o formulário de edição com os dados do produto selecionado
+  const startEditProduct = (product) => {
+    setEditProductId(product.id);
+    setEditProductName(product.name);
+    setEditProductDescription(product.description || '');
+    setEditProductPrice(String(product.price));
   };
 
-  // UPDATE - Atualizar um item existente
-  const updateItem = async () => {
-    if (editItemName.trim() === '' || editItemQuantity.trim() === '') {
-        Alert.alert("Atenção", "Nome do item e quantidade são obrigatórios para atualização.");
-        return;
-    }
-    const quantity = parseInt(editItemQuantity.trim(), 10);
-    if (isNaN(quantity) || quantity <= 0) {
-        Alert.alert("Atenção", "A quantidade deve ser um número maior que zero para atualização.");
-        return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch(`${BASE_URL}/compras/${editItemId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ item: editItemName.trim(), quantidade: quantity }),
-      });
-      if (response.ok) {
-        await fetchItems();
-        setEditItemId(null);
-        setEditItemName('');
-        setEditItemQuantity('');
-      } else {
-        console.error('Falha ao atualizar item:', response.status);
-        Alert.alert("Erro", `Falha ao atualizar item. Status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar item:', error);
-      Alert.alert("Erro", "Ocorreu um erro ao atualizar o item.");
-    } finally {
-      setLoading(false);
-    }
+  // Cancela a edição
+  const cancelEdit = () => {
+    setEditProductId(null);
   };
 
-  // DELETE - Remover um item da lista
-  const deleteItem = async (id) => {
+ // --- (v2) UPDATE: Atualizar um produto existente (usando PATCH) ---
+ const updateProduct = async () => {
+  if (editProductName.trim() === '' || editProductPrice.trim() === '') {
+    Alert.alert("Atenção", "Nome e Preço são obrigatórios para atualização.");
+    return;
+  }
+  const price = parseFloat(editProductPrice.trim().replace(',', '.'));
+  if (isNaN(price) || price < 0) {
+    Alert.alert("Atenção", "O preço para atualização deve ser um número válido.");
+    return;
+  }
+
+  setLoading(true);
+  const updatedProduct = {
+    name: editProductName.trim(),
+    description: editProductDescription.trim(),
+    price: price,
+  };
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/catalog/${editProductId}`, {
+      method: 'PATCH', // REQUISITO: Usar PATCH para atualização
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedProduct),
+    });
+    if (response.ok) {
+      await fetchProducts();
+      cancelEdit(); // Limpa os campos de edição
+    } else {
+      throw new Error(`Falha ao atualizar produto. Status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar produto:', error);
+    Alert.alert("Erro", `Ocorreu um erro ao atualizar o produto: ${error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // --- (v2) DELETE: Remover um produto da lista ---
+  const deleteProduct = async (id) => {
     Alert.alert(
       'Confirmar Exclusão',
-      'Você tem certeza que deseja excluir este item?',
+      'Você tem certeza que deseja excluir este produto?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Excluir',
+          style: 'destructive',
           onPress: async () => {
             setLoading(true);
             try {
-              const response = await fetch(`${BASE_URL}/compras/${id}`, {
+              const response = await fetch(`${BASE_URL}/api/catalog/${id}`, {
                 method: 'DELETE',
               });
               if (response.ok) {
-                await fetchItems();
+                await fetchProducts();
               } else {
-                console.error('Falha ao excluir item:', response.status);
-                Alert.alert("Erro", `Falha ao excluir item. Status: ${response.status}`);
+                throw new Error(`Falha ao excluir produto. Status: ${response.status}`);
               }
             } catch (error) {
-              console.error('Erro ao excluir item:', error);
-              Alert.alert("Erro", "Ocorreu um erro ao excluir o item.");
+              console.error('Erro ao excluir produto:', error);
+              Alert.alert("Erro", `Ocorreu um erro ao excluir o produto: ${error.message}`);
             } finally {
               setLoading(false);
             }
@@ -156,143 +184,175 @@ export default function App() {
     );
   };
 
- // READ -> Renderiza cada item da lista de compras ou o formulário de edição
- const renderItem = ({ item: compraItem }) => { // Renomeado 'item' para 'compraItem' para clareza
-  if (compraItem.id === editItemId) {
-    // Item está sendo editado
-    return (
-      <View style={styles.itemContainer}>
-        <TextInput
-          style={[styles.input, styles.editInput]}
-          placeholder="Nome do Item"
-          onChangeText={setEditItemName}
-          value={editItemName}
-          autoFocus
-        />
-        <TextInput
-          style={[styles.input, styles.editInput, styles.quantityInputEdit]}
-          placeholder="Qtde"
-          onChangeText={setEditItemQuantity}
-          value={editItemQuantity}
-          keyboardType="numeric"
-        />
-        <View style={styles.buttonGroup}>
-          <Button title="Salvar" onPress={updateItem} color="#4CAF50" />
-          <View style={styles.buttonSpacer} />
-          <Button title="Cancelar" onPress={() => setEditItemId(null)} color="#f44336" />
+  // --- Renderização de cada item da lista ---
+  const renderItem = ({ item: product }) => {
+    // Se o item está sendo editado, mostra o formulário de edição
+    if (product.id === editProductId) {
+      return (
+        <View style={styles.itemContainer}>
+          <Text style={styles.editTitle}>Editando Produto</Text>
+          <TextInput style={styles.input} placeholder="Nome do Produto" onChangeText={setEditProductName} value={editProductName} />
+          <TextInput style={styles.input} placeholder="Descrição" onChangeText={setEditProductDescription} value={editProductDescription} />
+          <TextInput style={styles.input} placeholder="Preço" onChangeText={setEditProductPrice} value={editProductPrice} keyboardType="numeric" />
+          <View style={styles.buttonGroup}>
+            <Button title="Salvar" onPress={updateProduct} color="#4CAF50" />
+            <View style={styles.buttonSpacer} />
+            <Button title="Cancelar" onPress={cancelEdit} color="#f44336" />
+          </View>
         </View>
-      </View>
-    );
-  } else {
-    // Exibição normal do item
+      );
+    }
+    // Senão, mostra a visualização normal do item
     return (
       <View style={styles.itemContainer}>
+        {/* Adicionado o componente Image */}
+        {product.image ? (
+          <Image 
+            source={{ uri: product.image }} 
+            style={styles.productImage} 
+            // Fallback para caso a imagem não carregue
+            onError={() => console.warn(`Imagem não encontrada para o produto: ${product.name}`)}
+          />
+        ) : null}
         <View style={styles.itemTextContainer}>
-          <Text style={styles.itemNameText}>{compraItem.item}</Text>
-          <Text style={styles.itemQuantityText}>Qtde: {compraItem.quantidade}</Text>
+          <Text style={styles.itemNameText}>{product.name}</Text>
+          <Text style={styles.itemDescriptionText}>{product.description}</Text>
+          <Text style={styles.itemPriceText}>R$ {Number(product.price).toFixed(2)}</Text>
         </View>
         <View style={styles.buttonGroup}>
-          <Button title="Editar" onPress={() => startEditItem(compraItem)} color="#2196F3" />
+          <Button title="Editar" onPress={() => startEditProduct(product)} color="#2196F3" />
           <View style={styles.buttonSpacer} />
-          <Button title="Excluir" onPress={() => deleteItem(compraItem.id)} color="#f44336" />
+          <Button title="Excluir" onPress={() => deleteProduct(product.id)} color="#f44336" />
         </View>
       </View>
     );
-  }
-};
+  };
 
+  // --- JSX Principal do Componente ---
   return (
     <View style={styles.container}>
-      <StatusBar style="auto" />
-      <Text style={styles.mainTitle}>Lista de Compras App</Text>
+      <StatusBar barStyle="dark-content" />
+      <Text style={styles.mainTitle}>Catálogo de Produtos</Text>
 
-      {/* Seção de Inputs para adicionar novo item */}
+      {/* Formulário para adicionar novo produto */}
       <View style={styles.addFormContainer}>
-        <TextInput
-          style={[styles.input, styles.nameInput]}
-          value={itemName}
-          onChangeText={setItemName}
-          placeholder='Nome do Item'
-        />
-        <TextInput
-          style={[styles.input, styles.quantityInput]}
-          value={itemQuantity}
-          onChangeText={setItemQuantity}
-          placeholder='Qtde'
-          keyboardType="numeric"
-        />
-        <Button
-          title='Adicionar Item'
-          onPress={addItem}
-          disabled={loading}
-          color="#007BFF"
-        />
+        <TextInput style={styles.input} value={productName} onChangeText={setProductName} placeholder='Nome do Produto' />
+        <TextInput style={styles.input} value={productDescription} onChangeText={setProductDescription} placeholder='Descrição' />
+        <TextInput style={styles.input} value={productPrice} onChangeText={setProductPrice} placeholder='Preço (ex: 49.99)' keyboardType="numeric" />
+        <TouchableOpacity style={styles.addButton} onPress={addProduct} disabled={loading}>
+            <Text style={styles.addButtonText}>Adicionar Produto</Text>
+        </TouchableOpacity>
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />}
+      {loading && <ActivityIndicator size="large" color="#007BFF" style={styles.loadingIndicator} />}
 
       <FlatList
-        data={comprasList}
+        data={productsList}
         renderItem={renderItem}
-        keyExtractor={compra => compra.id ? compra.id.toString() : Math.random().toString()} // Chave robusta
+        keyExtractor={product => product.id ? product.id.toString() : Math.random().toString()}
         style={styles.list}
-        ListEmptyComponent={<Text style={styles.emptyListText}>Nenhum item na lista ainda.</Text>}
+        ListEmptyComponent={<Text style={styles.emptyListText}>Nenhum produto cadastrado.</Text>}
       />
-
-      {/* Elementos extras solicitados */}
-      <Text style={styles.extraText}>teste</Text>
-      <Image
-        source={{ uri: "https://picsum.photos/200" }}
-        style={styles.extraImage}
-      />
-    </View>
+  </View>
   );
 }
-  
-  
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 20,
-      marginTop: 60,
-    },
-    text: {
-      fontSize: 24,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-    },
-    input: {
-      height: 40,
-      borderColor: 'gray',
-      borderWidth: 1,
-      marginBottom: 10,
-      paddingHorizontal: 10,
-    },
-    list: {
-      marginTop: 20,
-    },
-    item: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 10,
-      padding: 10,
-      backgroundColor: '#f0f0f0',
-      borderRadius: 5,
-    },
-    itemText: {
-      flex: 1,
-      marginRight: 10,
-    },
-    buttons: {
-      flexDirection: 'row',
-    },
-    editInput: {
-      flex: 1,
-      marginRight: 10,
-      borderColor: 'gray',
-      borderWidth: 1,
-      paddingHorizontal: 10,
-    }
-  });
+
+// --- Estilos ---
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    backgroundColor: '#f5f5f5',
+  },
+  mainTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  addFormContainer: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 2,
+  },
+  input: {
+    height: 45,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    backgroundColor: '#fafafa',
+  },
+  addButton: {
+    backgroundColor: '#007BFF',
+    padding: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  loadingIndicator: {
+    marginVertical: 15,
+  },
+  list: {
+    marginTop: 10,
+  },
+  emptyListText: {
+    textAlign: 'center',
+    marginTop: 30,
+    color: '#888',
+  },
+  itemContainer: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    elevation: 2,
+  },
+  productImage: { // Estilo para a imagem do produto
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 12,
+    backgroundColor: '#eee', // Cor de fundo enquanto a imagem carrega
+  },
+  itemTextContainer: {
+    marginBottom: 10,
+  },
+  itemNameText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  itemDescriptionText: {
+    fontSize: 14,
+    color: '#666',
+    marginVertical: 4,
+  },
+  itemPriceText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#28a745',
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  buttonSpacer: {
+    width: 10,
+  },
+  editTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+});
