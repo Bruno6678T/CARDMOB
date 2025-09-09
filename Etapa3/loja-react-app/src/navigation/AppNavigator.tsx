@@ -10,6 +10,7 @@ import HomeScreen from "../screens/HomeScreen";
 // importar depois que implementar: DetailsScreen, SettingsScreen
 import RegisterScreen from "../screens/RegisterScreen";
 import LoginScreen from "../screens/LoginScreen";
+import CatalogScreen from "../screens/catalog/CatalogScreen";
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -20,7 +21,7 @@ function TabNavigator() {
             screenOptions={({route, navigation}) => ({
               tabBarIcon: ({ color, focused, size}) => {
                 let iconName;
-                if (route.name === "Home") {
+                if (route.name === "Catalog") {
                   iconName = focused ? "home" : "home";
                 }
                 return <FontAwesome name={iconName} size={size} color={color} />
@@ -30,7 +31,11 @@ function TabNavigator() {
               headerShown: false,
             })}
             >
-            <Tab.Screen name="Home" component={HomeScreen}/>
+            <Tab.Screen 
+            name="Catalog" 
+            component={CatalogScreen}
+            options={{title: 'Menu'}}
+            />
             <Tab.Screen name="Settings" component={HomeScreen} />
             <Tab.Screen name="Register" component={RegisterScreen} />
         </Tab.Navigator>
