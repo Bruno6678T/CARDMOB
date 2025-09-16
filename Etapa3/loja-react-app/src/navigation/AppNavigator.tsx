@@ -1,9 +1,10 @@
 import React from "react";
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { RootStackParamList, TabParamList } from './types';
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+
+import { RootStackParamList, TabParamList } from './types';
 
 // Telas do app - área não logada.
 import HomeScreen from "../screens/HomeScreen";
@@ -11,6 +12,7 @@ import HomeScreen from "../screens/HomeScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import LoginScreen from "../screens/LoginScreen";
 import CatalogScreen from "../screens/catalog/CatalogScreen";
+import CartScreen from "../screens/cartScreen";
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -22,7 +24,10 @@ function TabNavigator() {
               tabBarIcon: ({ color, focused, size}) => {
                 let iconName;
                 if (route.name === "Catalog") {
-                  iconName = focused ? "home" : "home";
+                  iconName = focused ? "tags" : "tags";
+                }
+                if (route.name === "Cart") {
+                  iconName = focused ? "shopping-cart" : "shopping-cart";
                 }
                 return <FontAwesome name={iconName} size={size} color={color} />
               },
@@ -30,11 +35,16 @@ function TabNavigator() {
               tabBarInactiveTintColor: "grey",
               headerShown: false,
             })}
-            >
+          >
             <Tab.Screen 
-            name="Catalog" 
-            component={CatalogScreen}
-            options={{title: 'Menu'}}
+              name="Catalog"
+              component={CatalogScreen}
+              options={{title: 'Menu'}}
+              />
+            <Tab.Screen
+              name="Cart"
+              component={CartScreen}
+              options={{title: 'Seu Carrinho'}}
             />
             <Tab.Screen name="Settings" component={HomeScreen} />
             <Tab.Screen name="Register" component={RegisterScreen} />
