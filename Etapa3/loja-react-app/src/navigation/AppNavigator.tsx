@@ -12,7 +12,7 @@ import HomeScreen from "../screens/HomeScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import LoginScreen from "../screens/LoginScreen";
 import CatalogScreen from "../screens/catalog/CatalogScreen";
-import CartScreen from "../screens/cartScreen";
+import CartScreen from "../screens/Cart/CartScreen";
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
