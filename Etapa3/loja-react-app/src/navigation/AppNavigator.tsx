@@ -12,8 +12,9 @@ import HomeScreen from "../screens/HomeScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import LoginScreen from "../screens/LoginScreen";
 import CatalogScreen from "../screens/catalog/CatalogScreen";
-import CartScreen from "../screens/Cart/CartScreen"
-import CheckoutScreen from "../screens/Cart/CheckoutScreen"
+import CartScreen from "../screens/Cart/CartScreen";
+import CheckoutScreen from "../screens/Cart/CheckoutScreen";
+import OrderInfoScreen from "../screens/Cart/OrderInfoScreen";
 
 const AppStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -79,6 +80,11 @@ function StackNavigator() {
         name="Checkout"
         component={CheckoutScreen}
         options={{title: "Concluir pedido"}}
+      />
+      <AppStack.Screen 
+        name="OrderInfo"
+        component={OrderInfoScreen}
+        options={{title: "Resumo do pedido"}}
       />
     </AppStack.Navigator>
   );
