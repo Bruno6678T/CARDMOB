@@ -1,23 +1,48 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, Button } from 'react-native';
 
-const CatalogCard = ({ product, onBuyPress }: any) => {
+import { useShop } from '../../contexts/ShopContext';
+import { useAuth } from '../../contexts/AuthContext';
+
+const CatalogCard = ({product, onBuyPress}: any) => {
+    const { pickImage }= useShop();
+    const { userData } = useAuth();
+    const [updatedImage, setUpdatedImage] = useState(product.image)
+
+    const updateImage = async () => {
+        const loadedImage = await pickImage();
+        if (loadedImage) setUpdatedImage(loadedImage);
+    }
+
     return (
         <View style={styles.card}>
-            <Image 
-                source={{ uri: product.Image }}
+            <Image  
+                source={
+                    updatedImage
+                        ? { uri: updatedImage }
+                        : { uri: product.image }
+                }
                 style={styles.image}
             />
+            
             <View style={styles.details}>
                 <Text style={styles.name}>{product.name}</Text>
                 <Text style={styles.description}>{product.description}</Text>
                 <Text style={styles.price}>R$ {product.price.toFixed(2)}</Text>
                 <View style={styles.buttonsContainer}>
-                            <Button 
-                            title="Comprar" 
-                            color="#28A745" 
+                        <Button 
+                            title="Comprar"
+                            color="#28A745"
                             onPress={onBuyPress}
                         />
+                        {userData.is_admin ? (
+                                <Button 
+                                    title="Editar"
+                                    color="#007BFF"
+                                    onPress={updateImage}
+                                />
+                            ) : null
+                        }
                 </View>
             </View>
         </View>
